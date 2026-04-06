@@ -1,5 +1,5 @@
 // Configuration and Constants
-const WEATHER_API_KEY = 'API Key'; // Replace with your API key
+const WEATHER_API_KEY = '74d053f65bc1675d07d988f4a6bd7a81'; // Replace with your API key
 const WEATHER_API_URL = 'https://api.openweathermap.org/data/2.5/weather';
 const PLACEHOLDER_API_URL = 'https://jsonplaceholder.typicode.com/posts';
 
@@ -67,21 +67,25 @@ async function getWeather() {
     weatherResult.innerHTML = 'Loading...';
 
     try {
-        // Constructing the URL with query parameters
         const url = `${WEATHER_API_URL}?q=${encodeURIComponent(city)}&units=metric&appid=${WEATHER_API_KEY}`;
 
-        // Fetch API for GET request
         const response = await fetch(url);
+
+        // ✅ Check content type before parsing JSON
+        const contentType = response.headers.get('content-type');
+        if (!contentType || !contentType.includes('application/json')) {
+            throw new Error('API returned an invalid response. Check your API key.');
+        }
+
         const data = await response.json();
 
-        // Display response info
-        displayResponseInfo('GET', url.replace(WEATHER_API_KEY, 'API_KEY_HIDDEN'), response.status, data);
-
+        // ✅ Check for API-level errors
         if (!response.ok) {
             throw new Error(data.message || 'Failed to fetch weather data');
         }
 
-        // Display weather data
+        displayResponseInfo('GET', url.replace(WEATHER_API_KEY, 'API_KEY_HIDDEN'), response.status, data);
+
         weatherResult.innerHTML = `
             <div class="weather-card">
                 <h3>${data.name}, ${data.sys.country}</h3>
@@ -101,22 +105,22 @@ async function getWeather() {
             </div>
         `;
 
-        // Add quick save functionality
         document.getElementById('quick-save').addEventListener('click', () => {
             document.getElementById('location-name').value = `Weather in ${data.name}`;
             document.getElementById('location-city').value = data.name;
             document.getElementById('location-country').value = data.sys.country;
             document.getElementById('location-notes').value = `Temp: ${data.main.temp}°C, Weather: ${data.weather[0].description}`;
-
-            // Switch to the POST tab
             document.querySelector('.tab[data-tab="post"]').click();
         });
 
     } catch (error) {
-        weatherResult.innerHTML = `<div class="weather-card" style="border-left-color: #e74c3c;">
-            <h3>Error</h3>
-            <p>${error.message}</p>
-        </div>`;
+        // ✅ Clean error display
+        weatherResult.innerHTML = `
+            <div class="weather-card" style="border-left-color: #e74c3c;">
+                <h3>Error</h3>
+                <p>${error.message}</p>
+            </div>
+        `;
     }
 }
 
